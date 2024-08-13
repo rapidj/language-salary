@@ -5,22 +5,17 @@ import time
 from terminaltables import AsciiTable
 
 
-def fetch_sj_auth_params():
-    load_dotenv()
-    sj_login = os.environ['SJ_LOGIN']
-    sj_password = os.environ['SJ_PASSWORD']
-    sj_client_id = os.environ['SJ_CLIENT_ID']
-    sj_client_secret = os.environ['SJ_CLIENT_SECRET']
-
+def fetch_sj_token(login, password, client_id, client_secret):
     params = {
-        'login': sj_login,
-        'password': sj_password,
-        'client_id': sj_client_id,
-        'client_secret': sj_client_secret
+        'login': login,
+        'password': password,
+        'client_id': client_id,
+        'client_secret': client_secret
     }
     response = requests.get('https://api.superjob.ru/2.0/oauth2/password/', params=params)
     response.raise_for_status()
-    return sj_client_secret, response.json()['access_token']
+    sj_api = response.json()
+    return sj_api['access_token']
 
 
 def predict_salary(payment_from, payment_to):
@@ -39,10 +34,6 @@ def predict_rub_salary_hh(vacancy):
     if not salary or salary['currency'] != 'RUR':
         return None
     return predict_salary(salary.get('from'), salary.get('to'))
-
-
-def predict_rub_salary_sj(vacancy):
-    return predict_salary(vacancy.get('payment_from'), vacancy.get('payment_to'))
 
 
 def fetch_vacancies_hh(text, page_limit):
@@ -147,7 +138,7 @@ def fetch_sj_statistics(client_secret, token, languages, page_limit=1000):
         vacancies_processed = 0
         total_salary = 0
         for vacancy in vacancies:
-            predicted_salary = predict_rub_salary_sj(vacancy)
+            predicted_salary = predict_salary(vacancy.get('payment_from'), vacancy.get('payment_to'))
             if predicted_salary:
                 vacancies_processed += 1
                 total_salary += predicted_salary
@@ -182,8 +173,14 @@ def print_table(vacancy_descriptions, title):
     print(table.table)
     print()
 
+
 def main():
-    sj_client_secret, sj_token = fetch_sj_auth_params()
+    load_dotenv()
+    sj_login = os.environ['SJ_LOGIN']
+    sj_password = os.environ['SJ_PASSWORD']
+    sj_client_id = os.environ['SJ_CLIENT_ID']
+    sj_client_secret = os.environ['SJ_CLIENT_SECRET']
+    sj_token = fetch_sj_token(sj_login, sj_password, sj_client_id, sj_client_secret)
 
     languages = [
         'Java',
