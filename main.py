@@ -14,8 +14,8 @@ def fetch_sj_token(login, password, client_id, client_secret):
     }
     response = requests.get('https://api.superjob.ru/2.0/oauth2/password/', params=params)
     response.raise_for_status()
-    sj_api = response.json()
-    return sj_api['access_token']
+    sj_token_info = response.json()
+    return sj_token_info['access_token']
 
 
 def predict_salary(payment_from, payment_to):
